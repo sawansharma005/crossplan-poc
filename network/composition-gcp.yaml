@@ -10,9 +10,14 @@ spec:
     apiVersion: multik8s.platformref.crossplane.io/v1alpha1
     kind: CompositeNetwork
   resources:
-    - base:
+    - name: network
+      base: 
         apiVersion: compute.gcp.crossplane.io/v1beta1
         kind: Network
+        metadata:
+          name: crossplane-poc-network
+          labels: 
+            project: poc
         spec:
           forProvider:
             autoCreateSubnetworks: false
@@ -22,9 +27,14 @@ spec:
       patches:
         - fromFieldPath: spec.id
           toFieldPath: metadata.labels[networks.multik8s.platformref.crossplane.io/network-id]
-    - base:
+    - name: subnetwork
+      base:
         apiVersion: compute.gcp.crossplane.io/v1beta1
         kind: Subnetwork
+        metadata:
+          name: crossplanepoc-sub-network
+          labels: 
+            project: poc
         spec:
           forProvider:
             region: us-west2
@@ -32,7 +42,9 @@ spec:
               # This selector ensures this Subnetwork will select and use the
               # above Network. They will both be part of the XR, and thus their
               # controller references will match.
-              matchControllerRef: true
+              #matchControllerRef: true
+               matchLabels: 
+                 project: poc
             privateIpGoogleAccess: true
             ipCidrRange: 172.16.0.0/16
             secondaryIpRanges:

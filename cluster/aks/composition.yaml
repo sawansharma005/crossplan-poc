@@ -1,0 +1,46 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: aks.multik8s.platformref.crossplane.io
+  labels:
+    provider: AZURE
+spec:
+  #writeConnectionSecretsToNamespace: crossplane-system
+  compositeTypeRef:
+    apiVersion: multik8s.platformref.crossplane.io/v1alpha1
+    kind: AKS
+  resources:
+    - base:
+        apiVersion: azure.crossplane.io/v1alpha3
+        kind: ResourceGroup
+        metadata:
+          name: poc
+          labels:
+            project: poc
+        spec: 
+          location: eastus2
+          providerConfigRef:
+            name: aksprovider
+    - base:
+        apiVersion: compute.azure.crossplane.io/v1alpha3
+        kind: AKSCluster
+        metadata:
+          name: crossplane-poc
+          labels:
+            project: poc
+        spec:
+          #forProvider:
+          resourceGroupNameSelector:
+            matchLabels:
+              project: poc
+          location: "eastus2"
+          version: "1.22.6"
+          nodeCount: 1
+          nodeVMSize: standard_dc2s_v3
+          dnsNamePrefix: crossplane-aks
+          disableRBAC: false
+          providerConfigRef:
+            name: aksprovider
+      patches:
+        - fromFieldPath: spec.parameters.nodes.count
+          toFieldPath: spec.nodeCount

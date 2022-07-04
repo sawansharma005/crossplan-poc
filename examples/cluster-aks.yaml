@@ -1,0 +1,12 @@
+apiVersion: multik8s.platformref.crossplane.io/v1alpha1
+kind: AKS
+metadata:
+  name: aks-cluster
+spec:
+  compositionSelector:
+    matchLabels:
+      provider: AZURE
+  id: crossplane-poc-aks-k8s
+  parameters:
+    nodes:
+      count: 1

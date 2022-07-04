@@ -13,11 +13,15 @@ spec:
     - base:
         apiVersion: container.gcp.crossplane.io/v1beta2
         kind: Cluster
+        metadata:
+          name: crossplane-poc
+          labels:
+            project: poc
         spec:
           forProvider:
-            initialClusterVersion: "1.20"
-            location: us-west2
-            serviceAccount: sa-test
+            initialClusterVersion: "1.21.11"
+            location: "us-west2"
+            serviceAccount: sa-test@flash-hour-354609.iam.gserviceaccount.com
             masterAuthorizedNetworksConfig:
               enabled: false
             ipAllocationPolicy:
@@ -54,19 +58,32 @@ spec:
     - base:
         apiVersion: container.gcp.crossplane.io/v1beta1
         kind: NodePool
+        metadata: 
+          name: default
+          labels: 
+            project: poc
         spec:
           forProvider:
-            location: us-west2
             initialNodeCount: 1
+            location: "us-west2"
             clusterSelector:
               # Attach this node pool to the GKECluster created above.
-              matchControllerRef: true
+              #matchControllerRef: true
+              matchLabels:
+                project: poc
+            #clusterRef:
+            #  name: crossplane-poc
             autoscaling:
               enabled: true
+              autoprovisioned: false
+              maxNodeCount: 2
+              minNodeCount: 1
             config:
+              machineType: n1-standard-1
+              serviceAccount: sa-test@flash-hour-354609.iam.gserviceaccount.com
               diskType: pd-standard
-              diskSizeGb: 100
-              imageType: COS
+              diskSizeGb: 20
+              imageType: cos_containerd
               preemptible: true
               shieldedInstanceConfig:
                 enableIntegrityMonitoring: true
@@ -74,7 +91,12 @@ spec:
               metadata:
                 disable-legacy-endpoints: "true"
               oauthScopes:
-                - https://www.googleapis.com/auth/cloud-platform
+                - "https://www.googleapis.com/auth/devstorage.read_only"
+                - "https://www.googleapis.com/auth/logging.write"
+                - "https://www.googleapis.com/auth/monitoring"
+                - "https://www.googleapis.com/auth/servicecontrol"
+                - "https://www.googleapis.com/auth/service.management.readonly"
+                - "https://www.googleapis.com/auth/trace.append"
             management:
               autoRepair: true
               autoUpgrade: false
@@ -84,20 +106,20 @@ spec:
       patches:
         # Derive the node count and type of this node pool from the XR. Note that
         # the XR's node count is set to initial, min, and max.
-        - fromFieldPath: spec.parameters.nodes.size
-          toFieldPath: spec.forProvider.config.machineType
-          transforms:
-            - type: map
-              map:
-                small: n1-standard-4
-                medium: n1-standard-16
-                large: n1-standard-32
-        - fromFieldPath: spec.parameters.nodes.count
-          toFieldPath: spec.forProvider.initialNodeCount
-        - fromFieldPath: spec.parameters.nodes.count
-          toFieldPath: spec.forProvider.autoscaling.minNodeCount
-        - fromFieldPath: spec.parameters.nodes.count
-          toFieldPath: spec.forProvider.autoscaling.maxNodeCount
+        #- fromFieldPath: spec.parameters.nodes.size
+        #  toFieldPath: spec.forProvider.config.machineType
+          #transforms:
+          #  - type: map
+          #    map:
+          #      small: n1-standard-1
+          #      medium: n1-standard-16
+          #      large: n1-standard-32
+        #- fromFieldPath: spec.parameters.nodes.count
+        #  toFieldPath: spec.forProvider.initialNodeCount
+        #- fromFieldPath: spec.parameters.nodes.count
+        #  toFieldPath: spec.forProvider.autoscaling.minNodeCount
+        #- fromFieldPath: spec.parameters.nodes.count
+        #  toFieldPath: spec.forProvider.autoscaling.maxNodeCount
     - base:
         apiVersion: helm.crossplane.io/v1beta1
         kind: ProviderConfig
